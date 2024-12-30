@@ -10,7 +10,7 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#include "../src/JPEGENC.h"
+#include "../../src/JPEGENC.h"
 JPEGENC jpg; // static copy of JPEG encoder class
 
 // If MEM_TO_MEM is defined, the encoder will output directly to a single buffer that you
