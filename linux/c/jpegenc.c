@@ -656,12 +656,12 @@ void JPEGFixQuantE(JPEGE_IMAGE *pJPEG)
     int i, iCount;
     signed short *p;
     unsigned short *pus;
-    
+
     if (pJPEG->ucNumComponents == 1)
         iCount = 1;
     else
         iCount = 2;
-    
+
     for (iTable = 0; iTable < iCount; iTable++)
     {
         iTableOffset = iTable * DCTSIZE;
@@ -671,7 +671,7 @@ void JPEGFixQuantE(JPEGE_IMAGE *pJPEG)
             sTemp[i] = p[cZigZag[i]];
         }
         memcpy(&pJPEG->sQuantTable[iTableOffset], sTemp, DCTSIZE*sizeof(short)); // copy back to original spot
-        
+
         // Prescale for DCT multiplication
         p = (signed short *) &pJPEG->sQuantTable[iTableOffset];
         for (i = 0; i < DCTSIZE; i++)
@@ -826,7 +826,7 @@ int JPEGEncodeBegin(JPEGE_IMAGE *pJPEG, JPEGENCODE *pEncode, int iWidth, int iHe
     // Number of MCUs in each dimension
     pJPEG->iMCUWidth = (pJPEG->iWidth + pEncode->cx - 1) / pEncode->cx;
     pJPEG->iMCUHeight = (pJPEG->iHeight + pEncode->cy - 1) / pEncode->cy;
-    
+
     // Set up the output buffer
     pJPEG->pc.iLen = pJPEG->pc.ulAcc = 0;
     if (pJPEG->pOutput) {
@@ -922,7 +922,7 @@ int JPEGEncodeBegin(JPEGE_IMAGE *pJPEG, JPEGENCODE *pEncode, int iWidth, int iHe
     iOffset += 2;
     WRITEMOTO16(pBuf, iOffset, i); // restart interval count
     iOffset += 2;
-    
+
     // store the frame header
     WRITEMOTO16(pBuf, iOffset, 0xffc0); // SOF0 marker
     iOffset += 2;
@@ -1029,7 +1029,7 @@ int JPEGEncodeBegin(JPEGE_IMAGE *pJPEG, JPEGENCODE *pEncode, int iWidth, int iHe
     pBuf[iOffset++] = 0; // successive approximation bit
     // Set the output pointer for writing the variable length codes
     pJPEG->pc.pOut = &pBuf[iOffset];
-    
+
     // prepare the luma & chroma quantization tables
     for (i = 0; i<64; i++)
     {
@@ -1068,7 +1068,7 @@ int JPEGQuantize(JPEGE_IMAGE *pJPEG, signed short *pMCUSrc, int iTable)
     signed int d, sQ1, sQ2, sum;
     int i;
     signed short *pQuant;
-    
+
     pQuant = (signed short *)&pJPEG->sQuantTable[iTable * DCTSIZE];
     for (i=0; i<33; i++) // do first half and then check for second half being all 0's
     {
@@ -1123,12 +1123,12 @@ int JPEGEncodeMCU(int iDCTable, JPEGE_IMAGE *pJPEG, signed short *pMCUData, int 
     BIGUINT ulAcc;
     uint32_t ulMagVal;
     uint32_t *pMagFix = (uint32_t *)&ulMagnitudeFix[1024]; // allows indexing positive and negative values - speeds up total encode time by 15%
-    
+
     // Put in local vars to allow compiler to do a better job of optimization using registers
     ulAcc = pJPEG->pc.ulAcc;
     pOut = pJPEG->pc.pOut;
     iLen = pJPEG->pc.iLen;
-    
+
     // compress the DC component
     iDelta = pMCUData[0] - iDCPred;
     iDCPred = pMCUData[0]; // this is the new DC value
@@ -1197,19 +1197,19 @@ int JPEGEncodeMCU(int iDCTable, JPEGE_IMAGE *pJPEG, signed short *pMCUData, int 
             STORECODE(pOut, iLen, ulCode, ulAcc, iNewLen)
         }
     }
-    
+
 encodemcuz:
     pJPEG->pc.ulAcc = ulAcc; // place local copies back in the object pointer version
     pJPEG->pc.pOut = pOut;
     pJPEG->pc.iLen = iLen;
     return iDCPred;
-    
+
 } /* JPEGEncodeMCU() */
 
 void JPEGGetMCU(unsigned char *pSrc, int iPitch, signed char *pMCU)
 {
     int cy;
-    
+
     for (cy = 0; cy < 8; cy++) {
         *(uint32_t *)pMCU = *(uint32_t *)pSrc ^ 0x80808080;
         *(uint32_t *)&pMCU[4] = *(uint32_t *)&pSrc[4] ^ 0x80808080;
@@ -1224,10 +1224,10 @@ void JPEGSubSample24(unsigned char *pSrc, signed char *pLUM, signed char *pCb, s
     unsigned char cRed, cGreen, cBlue;
     int iY1, iY2, iY3, iY4, iCr1, iCr2, iCr3, iCr4, iCb1, iCb2, iCb3, iCb4;
     int y;
-    
+
     cx = (cx + 1)>>1; // do pixels in 2x2 blocks
     cy = (cy + 1)>>1;
-    
+
     for (y=0; y<cy; y++)
     {
         for (x = 0; x<cx; x++) // do 8x8 pixels in 2x2 blocks
@@ -1238,32 +1238,32 @@ void JPEGSubSample24(unsigned char *pSrc, signed char *pLUM, signed char *pCb, s
             iY1 = (((cRed * 1225) + (cGreen * 2404) + (cBlue * 467)) >> 12) - 0x80;
             iCb1 = (cBlue << 11) + (cRed * -691) + (cGreen * -1357);
             iCr1 = (cRed << 11) + (cGreen * -1715) + (cBlue * -333);
-            
+
             cBlue = pSrc[3];
             cGreen = pSrc[4];
             cRed = pSrc[5];
             iY2 = (((cRed * 1225) + (cGreen * 2404) + (cBlue * 467)) >> 12) - 0x80;
             iCb2 = (cBlue << 11) + (cRed * -691) + (cGreen * -1357);
             iCr2 = (cRed << 11) + (cGreen * -1715) + (cBlue * -333);
-            
+
             cBlue = pSrc[lsize];
             cGreen = pSrc[lsize+1];
             cRed = pSrc[lsize+2];
             iY3 = (((cRed * 1225) + (cGreen * 2404) + (cBlue * 467)) >> 12) - 0x80;
             iCb3 = (cBlue << 11) + (cRed * -691) + (cGreen * -1357);
             iCr3 = (cRed << 11) + (cGreen * -1715) + (cBlue * -333);
-            
+
             cBlue = pSrc[lsize+3];
             cGreen = pSrc[lsize+4];
             cRed = pSrc[lsize+5];
             iY4 = (((cRed * 1225) + (cGreen * 2404) + (cBlue * 467)) >> 12) - 0x80;
             iCb4 = (cBlue << 11) + (cRed * -691) + (cGreen * -1357);
             iCr4 = (cRed << 11) + (cGreen * -1715) + (cBlue * -333);
-            
+
             // Average the chroma values together
             iCr1 = (iCr1 + iCr2 + iCr3 + iCr4) >> 14;
             iCb1 = (iCb1 + iCb2 + iCb3 + iCb4) >> 14;
-            
+
             // store in the MCUs
             pLUM[0] = (signed char)iY1;
             pLUM[1] = (signed char)iY2;
@@ -1281,7 +1281,7 @@ void JPEGSubSample24(unsigned char *pSrc, signed char *pLUM, signed char *pCb, s
         pLUM += 8 + (4-cx)*2; // skip down a row since 2 at a time
         pSrc += lsize*2 - cx*6; // skip 2 lines
     } // for y
-    
+
 } /* JPEGSubSample24() */
 void JPEGSubSample16(unsigned char *pSrc, signed char *pLUM, signed char *pCb, signed char *pCr, int lsize, int cx, int cy)
 {
@@ -1290,10 +1290,10 @@ void JPEGSubSample16(unsigned char *pSrc, signed char *pLUM, signed char *pCb, s
     unsigned short *pUS = (unsigned short *)pSrc;
     unsigned char cRed, cGreen, cBlue;
     int iY1, iY2, iY3, iY4, iCr1, iCr2, iCr3, iCr4, iCb1, iCb2, iCb3, iCb4;
-    
+
     cx = (cx + 1)>>1; // do pixels in 2x2 blocks
     cy = (cy + 1)>>1;
-    
+
     for (y=0; y<cy; y++)
     {
         for (x=0; x<cx; x++) // do 8x8 pixels in 2x2 blocks
@@ -1305,7 +1305,7 @@ void JPEGSubSample16(unsigned char *pSrc, signed char *pLUM, signed char *pCb, s
             iY1 = (((cRed * 1225) + (cGreen * 2404) + (cBlue * 467)) >> 12) - 0x80;
             iCb1 = (cBlue << 11) + (cRed * -691) + (cGreen * -1357);
             iCr1 = (cRed << 11) + (cGreen * -1715) + (cBlue * -333);
-            
+
             us = pUS[1];
             cBlue = (unsigned char)(((us & 0x1f)<<3) | (us & 7));
             cGreen = (unsigned char)(((us & 0x7e0)>>3) | ((us & 0x60)>>5));
@@ -1313,7 +1313,7 @@ void JPEGSubSample16(unsigned char *pSrc, signed char *pLUM, signed char *pCb, s
             iY2 = (((cRed * 1225) + (cGreen * 2404) + (cBlue * 467)) >> 12) - 0x80;
             iCb2 = (cBlue << 11) + (cRed * -691) + (cGreen * -1357);
             iCr2 = (cRed << 11) + (cGreen * -1715) + (cBlue * -333);
-            
+
             us = pUS[lsize>>1];
             cBlue = (unsigned char)(((us & 0x1f)<<3) | (us & 7));
             cGreen = (unsigned char)(((us & 0x7e0)>>3) | ((us & 0x60)>>5));
@@ -1321,7 +1321,7 @@ void JPEGSubSample16(unsigned char *pSrc, signed char *pLUM, signed char *pCb, s
             iY3 = (((cRed * 1225) + (cGreen * 2404) + (cBlue * 467)) >> 12) - 0x80;
             iCb3 = (cBlue << 11) + (cRed * -691) + (cGreen * -1357);
             iCr3 = (cRed << 11) + (cGreen * -1715) + (cBlue * -333);
-            
+
             us = pUS[(lsize>>1)+1];
             cBlue = (unsigned char)(((us & 0x1f)<<3) | (us & 7));
             cGreen = (unsigned char)(((us & 0x7e0)>>3) | ((us & 0x60)>>5));
@@ -1329,11 +1329,11 @@ void JPEGSubSample16(unsigned char *pSrc, signed char *pLUM, signed char *pCb, s
             iY4 = (((cRed * 1225) + (cGreen * 2404) + (cBlue * 467)) >> 12) - 0x80;
             iCb4 = (cBlue << 11) + (cRed * -691) + (cGreen * -1357);
             iCr4 = (cRed << 11) + (cGreen * -1715) + (cBlue * -333);
-            
+
             // Average the chroma values together
             iCr1 = (iCr1 + iCr2 + iCr3 + iCr4) >> 14;
             iCb1 = (iCb1 + iCb2 + iCb3 + iCb4) >> 14;
-            
+
             // store in the MCUs
             pLUM[0] = (signed char)iY1;
             pLUM[1] = (signed char)iY2;
@@ -1351,7 +1351,7 @@ void JPEGSubSample16(unsigned char *pSrc, signed char *pLUM, signed char *pCb, s
         pLUM += 8 + (4-cx)*2; // skip down a row since 2 at a time
         pUS += lsize - cx*2; // skip 2 lines
     } // for y
-    
+
 } /* JPEGSubSample16() */
 
 void JPEGSubSample32(unsigned char *pSrc, signed char *pLUM, signed char *pCb, signed char *pCr, int lsize, int cx, int cy)
@@ -1425,7 +1425,7 @@ void JPEGSample32(unsigned char *pSrc, signed char *pMCU, int lsize, int cx, int
     int x, y;
     unsigned char cRed, cGreen, cBlue;
     int iY, iCr, iCb;
-   
+
     for (y=0; y<cy; y++)
     {
         for (x=0; x<cx; x++) // do 8x8 pixels
@@ -1465,7 +1465,7 @@ uint8_t *s = pImage;
 int iCr, iCb;
 uint32_t *pU32;
 
-  // output bins for YCbCr 
+  // output bins for YCbCr
     pY0 = (uint8_t *)pMCUData; pY1 = (uint8_t *)&pMCUData[64*1];
     pY2 = (uint8_t *)&pMCUData[64*2]; pY3 = (uint8_t *)&pMCUData[64*3];
     pCr = (uint8_t *)&pMCUData[64*4]; pCb = (uint8_t *)&pMCUData[64*5];
@@ -1616,7 +1616,7 @@ void JPEGSample16(unsigned char *pSrc, signed char *pMCU, int lsize, int cx, int
     unsigned short *pUS = (unsigned short *)pSrc;
     unsigned char cRed, cGreen, cBlue;
     int iY, iCr, iCb;
-    
+
     for (y=0; y<cy; y++)
     {
         for (x=0; x<cx; x++) // do 8x8 pixels
@@ -1628,7 +1628,7 @@ void JPEGSample16(unsigned char *pSrc, signed char *pMCU, int lsize, int cx, int
             iY = (((cRed * 1225) + (cGreen * 2404) + (cBlue * 467)) >> 12) - 0x80;
             iCb = (cBlue << 11) + (cRed * -691) + (cGreen * -1357);
             iCr = (cRed << 11) + (cGreen * -1715) + (cBlue * -333);
-            
+
             // store in the MCUs
             pMCU[64]  = (signed char)(iCb >> 12);
             pMCU[128]  = (signed char)(iCr >> 12);
@@ -1637,7 +1637,7 @@ void JPEGSample16(unsigned char *pSrc, signed char *pMCU, int lsize, int cx, int
         pMCU += 8 - cx;
         pUS += (lsize>>1) - cx;
     } // for y
-    
+
 } /* JPEGSample16() */
 
 /****************************************************************************
@@ -1653,7 +1653,7 @@ void JPEGSample24(unsigned char *pSrc, signed char *pMCU, int lsize, int cx, int
     unsigned char cRed, cGreen, cBlue;
     int iY, iCr, iCb;
     int y;
-    
+
     for (y=0; y<cy; y++)
     {
         for (x=0; x<cx; x++) // do 8x8 pixels
@@ -1664,7 +1664,7 @@ void JPEGSample24(unsigned char *pSrc, signed char *pMCU, int lsize, int cx, int
             iY = (((cRed * 1225) + (cGreen * 2404) + (cBlue * 467)) >> 12) - 0x80;
             iCb = (cBlue << 11) + (cRed * -691) + (cGreen * -1357);
             iCr = (cRed << 11) + (cGreen * -1715) + (cBlue * -333);
-            
+
             // store in the MCUs
             pMCU[64]  = (signed char)(iCb >> 12);
             pMCU[128]  = (signed char)(iCr >> 12);
@@ -1673,7 +1673,7 @@ void JPEGSample24(unsigned char *pSrc, signed char *pMCU, int lsize, int cx, int
         pMCU += 8 - cx;
         pSrc += lsize - cx*3;
     } // for y
-    
+
 } /* JPEGSample24() */
 
 void JPEGGetMCU11(unsigned char *pImage, JPEGE_IMAGE *pPage, int iPitch)
@@ -1696,7 +1696,7 @@ void JPEGGetMCU11(unsigned char *pImage, JPEGE_IMAGE *pPage, int iPitch)
         JPEGSample16(pImage, pMCUData, iPitch, cx, cy);
     else // must be 32-bpp
         JPEGSample32(pImage, pMCUData, iPitch, cx, cy);
-    
+
 } /* JPEGGetMCU11() */
 
 void JPEGFDCT(signed char *pMCUSrc, signed short *pMCUDest)
@@ -1785,7 +1785,7 @@ void JPEGFDCT(signed char *pMCUSrc, signed short *pMCUDest)
 void FlushCode(PIL_CODE *pPC)
 {
     unsigned char c;
-   
+
     while (pPC->iLen > 0)
     {
         c = (unsigned char) (pPC->ulAcc >> (REGISTER_WIDTH-8));
@@ -1801,7 +1801,7 @@ void FlushCode(PIL_CODE *pPC)
 int JPEGAddMCU(JPEGE_IMAGE *pJPEG, JPEGENCODE *pEncode, uint8_t *pPixels, int iPitch)
 {
     int bSparse;
-    
+
     if (pEncode->y >= pJPEG->iHeight) {
         // the image is already complete or was not initialized properly
         pJPEG->iError = JPEGE_INVALID_PARAMETER;
@@ -1926,3 +1926,7 @@ int iBPMCU;
     return rc;
 } /* JPEGAddFrame() */
 
+int JPEGGetLastError(JPEGE_IMAGE *pJPEG)
+{
+    return pJPEG->iError;
+} /* JPEGGetLastError() */

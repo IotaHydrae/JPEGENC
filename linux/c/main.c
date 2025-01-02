@@ -4,7 +4,7 @@
 //  written by Larry Bank (bitbank@pobox.com)
 //  Project started July 2021
 //  Copyright (c) 2021 BitBank Software, Inc.
-//  
+//
 
 #include <string.h>
 #include <stdio.h>
@@ -22,7 +22,7 @@
 //
 uint8_t * ReadBMP(const char *fname, int *width, int *height, int *bpp, unsigned char *pPal)
 {
-    int y, w, h, bits, offset;
+    int rc, y, w, h, bits, offset;
     uint8_t *s, *d, *pTemp, *pBitmap;
     int pitch, bytewidth;
     int iSize, iDelta;
@@ -39,7 +39,10 @@ uint8_t * ReadBMP(const char *fname, int *width, int *height, int *bpp, unsigned
     fseek(infile, 0, SEEK_SET);
     pBitmap = (uint8_t *)malloc(iSize);
     pTemp = (uint8_t *)malloc(iSize);
-    fread(pTemp, 1, iSize, infile);
+    rc = fread(pTemp, 1, iSize, infile);
+    if (rc != iSize)
+        printf("fread failed! rc : %d\n", rc);
+
     fclose(infile);
 
     if (pTemp[0] != 'B' || pTemp[1] != 'M' || pTemp[14] < 0x28) {
@@ -95,7 +98,7 @@ uint8_t * ReadBMP(const char *fname, int *width, int *height, int *bpp, unsigned
     *bpp = bits;
     free(pTemp);
     return pBitmap;
-    
+
 } /* ReadBMP() */
 
 int process_bmp_file(const char *input_path, const char *output_path)
@@ -222,22 +225,31 @@ int process_bmp_data(uint8_t *bmp, size_t len, const char *output_path)
     return 0;
 }
 
-int main(int argc, char *argv[])
+int main(int argc, const char *argv[])
 {
     int rc;
 
     printf("JPEGENC linux test app in pure C\n");
 
-    rc = process_bmp_file("../rgb565.bmp", "../output.jpg");
-    if (rc) {
-        printf("process bmp file failed, %d\n", rc);
-        return -1;
+    if (argc < 2) {
+        printf("Usage: %s <input.bmp> [output.jpg]\n", argv[0]);
+        return -EINVAL;
     }
 
-    rc = process_bmp_data(rgb565, sizeof(rgb565), "../output2.jpg");
+    /*
+     * Please ensure to edit the JPEGE_PIXEL_XXX option to match
+     * the input BMP file. Currently, it is assumed to be RGB565.
+     */
+    rc = process_bmp_file(argv[1], argc == 3 ? argv[2] : "./output.jpg");
+    if (rc) {
+        printf("process bmp file failed, %d\n", rc);
+        return -EINVAL;
+    }
+
+    rc = process_bmp_data(rgb565, sizeof(rgb565), "./.tmp.jpg");
     if (rc) {
         printf("process bmp data failed, %d\n", rc);
-        return -1;
+        return -EINVAL;
     }
 
     return 0;
