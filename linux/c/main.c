@@ -12,6 +12,7 @@
 #include <errno.h>
 
 #include "rgb565.h"
+#include "rgb565_bmp.h"
 #include "JPEGENC.h"
 
 #define OUTPUT_SIZE 65536
@@ -225,6 +226,51 @@ int process_bmp_data(uint8_t *bmp, size_t len, const char *output_path)
     return 0;
 }
 
+int process_rgb565_data(uint8_t *rgb565, size_t len, const char *output_path)
+{
+    int rc, y, w, h, bits, offset;
+    int pitch, bytewidth, delta;
+    uint8_t *buffer;
+    size_t buffer_size;
+    uint8_t *src, *dst;
+    JPEGE_IMAGE jpeg;
+    JPEGENCODE jpe;
+    FILE *fp;
+
+    w = 480;
+    h = 320;
+    bits = 16;
+
+    bytewidth = (w * bits) >> 3;
+    pitch = (bytewidth + 3) & 0xfffc;
+    printf("%s, w : %d, h : %d, pitch : %d\n", __func__, w, h, pitch);
+
+    buffer_size = len;
+    buffer = (uint8_t *)malloc(buffer_size);
+
+    memset(&jpeg, 0, sizeof(JPEGE_IMAGE));
+    jpeg.pOutput = buffer;
+    jpeg.iBufferSize = buffer_size;
+    jpeg.pHighWater = &jpeg.pOutput[jpeg.iBufferSize - 512];
+
+    rc = JPEGEncodeBegin(&jpeg, &jpe, w, h, JPEGE_PIXEL_RGB565, JPEGE_SUBSAMPLE_420, JPEGE_Q_HIGH);
+    if (rc == JPEGE_SUCCESS)
+        JPEGAddFrame(&jpeg, &jpe, rgb565, pitch);
+
+    JPEGEncodeEnd(&jpeg);
+    printf("%s, jpeg size : %d\n", __func__, jpeg.iDataSize);
+
+    printf("%s, write to %s\n", __func__, output_path);
+    fp = fopen(output_path, "wb");
+    if (fp) {
+        fwrite(buffer, 1, jpeg.iDataSize, fp);
+        fclose(fp);
+    }
+    free(buffer);
+
+    return 0;
+}
+
 int main(int argc, const char *argv[])
 {
     int rc;
@@ -246,9 +292,15 @@ int main(int argc, const char *argv[])
         return -EINVAL;
     }
 
-    rc = process_bmp_data(rgb565, sizeof(rgb565), "./.tmp.jpg");
+    rc = process_bmp_data(rgb565_bmp, sizeof(rgb565_bmp), "./.tmp.jpg");
     if (rc) {
         printf("process bmp data failed, %d\n", rc);
+        return -EINVAL;
+    }
+
+    rc = process_rgb565_data(rgb565, sizeof(rgb565), "./.tmp_rgb565.jpg");
+    if (rc) {
+        printf("process rgb565 data failed, %d\n", rc);
         return -EINVAL;
     }
 
